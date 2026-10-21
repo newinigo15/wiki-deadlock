@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Parches de balance: cada build y guía queda asociada al parche en el que se publicó.
+model Patch {
+  id         String   @id @default(cuid())
+  slug       String   @unique
+  name       String
+  releasedAt DateTime @default(now())
+  notes      String   @default("")
+  builds     Build[]
+  guides     Guide[]
+}
+
+model User {
+  id           String      @id @default(cuid())
+  username     String      @unique
+  passwordHash String
+  createdAt    DateTime    @default(now())
+  sessions     Session[]
+  builds       Build[]
+  guides       Guide[]
+  buildVotes   BuildVote[]
+  guideVotes   GuideVote[]
+  comments     Comment[]
+}
+
+model Session {
+  /// SHA-256 del token de la cookie; el token en claro nunca se guarda.
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Build {
+  id         String      @id @default(cuid())
+  heroSlug   String
+  title      String
+  items      String[]
+  flexSlots  Int         @default(0)
+  score      Int         @default(0)
+  createdAt  DateTime    @default(now())
+  patchId    String
+  patch      Patch       @relation(fields: [patchId], references: [id])
+  authorId   String
+  author     User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  votes      BuildVote[]
+  comments   Comment[]
+
+  @@index([heroSlug, score])
+}
+
+model Guide {
+  id        String      @id @default(cuid())
+  heroSlug  String?
+  title     String
+  body      String
+  score     Int         @default(0)
+  createdAt DateTime    @default(now())
+  patchId   String
+  patch     Patch       @relation(fields: [patchId], references: [id])
+  authorId  String
+  author    User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  votes     GuideVote[]
+
+  @@index([score])
+}
+
+model BuildVote {
+  userId  String
+  buildId String
+  value   Int
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  build   Build  @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  @@id([userId, buildId])
+}
+
+model GuideVote {
+  userId  String
+  guideId String
+  value   Int
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guide   Guide  @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@id([userId, guideId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  body      String
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  buildId   String
+  build     Build    @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  @@index([buildId])
+}

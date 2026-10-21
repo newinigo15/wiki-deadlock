@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Deadlock Wiki
 
-## Getting Started
+Wiki de fans de **Deadlock** rápida, sin anuncios e interactiva: héroes, generador de builds, objetos, mecánicas avanzadas, mapa de calor y guías de la comunidad con votos.
 
-First, run the development server:
+## Stack
+
+- **Next.js 15** (App Router, SSR/SSG para SEO) + **React 19** + TypeScript
+- **Tailwind CSS 4** + **Framer Motion** (transiciones sin pantallas de carga)
+- **React Three Fiber / Three.js** (fondo 3D del núcleo «Patron» y visor de modelos con hitboxes)
+- **PostgreSQL + Prisma** (parches de balance, builds, guías, votos, comentarios, usuarios)
+- **Vitest** (lógica de slots, calculadora de builds, búsqueda e integridad de datos)
+
+## Funcionalidades
+
+| Sección | Ruta | Qué incluye |
+|---|---|---|
+| Inicio | `/` | Fondo 3D con parallax, interfaz glassmorphism, buscador inteligente, rejilla de héroes con hover (desenfoque + clip) y expansión animada de la tarjeta |
+| Héroes | `/heroes`, `/heroes/[slug]` | Cabecera con clip, dificultad y roles; spider chart; habilidades con clip PiP e «Imbuir»; ruta de progresión; objetos core; matchups; visor 3D con hitboxes y animaciones (parry, melee, recarga); builds de la comunidad con votos y comentarios |
+| Build por parche | `/heroes/[slug]/build-parche-1` | URL amigable para SEO con la build recomendada y sus estadísticas |
+| Generador de builds | `/builds` | Tienda Arma / Vitalidad / Espíritu, arrastrar y soltar (o pulsar), 4 espacios por categoría + 4 Flex Slots desbloqueables por objetivos, cálculo en vivo de DPS, salud, poder espiritual, resistencias y coste; enlace compartible; publicar en la comunidad |
+| Objetos | `/objetos` | Catálogo por categoría con coste, efecto y counters |
+| Guías | `/guias/[slug]` | Almas y deny, Dash-Jump y slide, parry, Flex Slots, Urna, Jefe Central, estatuas, counters, mejores objetos para Seven |
+| Mapa | `/mapa` | Mapa de calor de gankeos, rutas, cajas, estatuas doradas y visión de los Caminantes (capas activables) |
+| Comunidad | `/comunidad`, `/entrar` | Cuentas, guías de usuarios y votos estilo Reddit |
+
+SEO: metadatos por página, `canonical`, `sitemap.xml`, `robots.txt` y datos estructurados (FAQPage con la salud base de cada héroe, Article para guías).
+
+## Puesta en marcha
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env
+docker compose up -d          # PostgreSQL local en el puerto 5433
+npm run db:migrate            # aplica las migraciones
+npm run db:seed               # crea el parche actual
+npm run dev                   # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Sin `DATABASE_URL` la wiki funciona igual; solo se desactivan las secciones de comunidad.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm test        # tests unitarios
+npm run lint
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Contenido y recursos
 
-## Learn More
+- Datos editables en `src/data/` (`heroes.ts`, `items.ts`, `guides.ts`, `map.ts`). Las estadísticas son **aproximadas** y deben revisarse con cada parche.
+- Clips en bucle: añade `.webm` (con canal alfa) en `public/clips/` — `<heroe>.webm` para la tarjeta/cabecera, `<heroe>-<n>.webm` para cada habilidad y los nombres indicados en `guides.ts` (`dash-jump`, `slide`, `parry`, …). Si falta un clip se muestra un marcador.
+- Modelos 3D: el visor usa una figura de referencia; los `.glb` irán en `public/models/`.
 
-To learn more about Next.js, take a look at the following resources:
+## Seguridad
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Contraseñas con scrypt, sesiones en base de datos (solo se guarda el hash del token), cookie `httpOnly` + `SameSite=Lax`, comprobación de origen en escrituras, limitación de peticiones por IP y validación con Zod. El contenido de usuarios se renderiza como texto.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Wiki de fans no oficial. Deadlock es una marca de Valve Corporation.

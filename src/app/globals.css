@@ -1,26 +1,66 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #0c0a08;
+  --ink-2: #15120e;
+  --panel: rgba(28, 23, 18, 0.62);
+  --line: rgba(232, 220, 196, 0.12);
+  --parchment: #e8dcc4;
+  --muted: #a89c86;
+  --brass: #c8a25a;
+  --weapon: #e0892f;
+  --vitality: #6fbf4a;
+  --spirit: #9b6cf0;
+  --danger: #e25b4b;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-panel: var(--panel);
+  --color-line: var(--line);
+  --color-parchment: var(--parchment);
+  --color-muted: var(--muted);
+  --color-brass: var(--brass);
+  --color-weapon: var(--weapon);
+  --color-vitality: var(--vitality);
+  --color-spirit: var(--spirit);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html { color-scheme: dark; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--ink);
+  color: var(--parchment);
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.glass {
+  background: var(--panel);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  border: 1px solid var(--line);
+}
+
+.prose-wiki p { line-height: 1.7; color: var(--parchment); }
+.prose-wiki p + p { margin-top: 0.75rem; }
+
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  z-index: 50;
+}
+
+:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
