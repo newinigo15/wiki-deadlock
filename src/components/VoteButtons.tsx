@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { readEnvelope } from "@/lib/apiClient";
 
 interface Props {
   endpoint: string;
@@ -16,6 +17,16 @@ export function VoteButtons({ endpoint, initialScore, initialVote, signedIn }: P
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
+  // Los props vienen del servidor: tras un router.refresh() (login/logout, nuevos votos)
+  // llegan valores nuevos y el estado local debe volver a reflejarlos.
+  const [synced, setSynced] = useState({ initialScore, initialVote, signedIn });
+  if (synced.initialScore !== initialScore || synced.initialVote !== initialVote || synced.signedIn !== signedIn) {
+    setSynced({ initialScore, initialVote, signedIn });
+    setScore(initialScore);
+    setVote(initialVote);
+    setError(null);
+  }
+
   async function cast(value: 1 | -1) {
     if (!signedIn) {
       setError("Inicia sesión para votar.");
@@ -25,10 +36,11 @@ export function VoteButtons({ endpoint, initialScore, initialVote, signedIn }: P
     setPending(true);
     setError(null);
     try {
-      const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ value: next }) });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error ?? "Error al votar.");
-      setScore(json.data.score);
+      const data = await readEnvelope<{ score: number }>(
+        fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ value: next }) }),
+        "Error al votar.",
+      );
+      setScore(data.score);
       setVote(next);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al votar.");

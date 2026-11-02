@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { buildSchema, credentialsSchema } from "@/lib/server/schemas";
+import { buildSchema, commentSchema, credentialsSchema, voteSchema } from "@/lib/server/schemas";
 import { heroesBySlug } from "@/data/heroes";
 import { itemsBySlug } from "@/data/items";
 import { loadoutFromSlugs } from "@/lib/slots";
@@ -38,5 +38,21 @@ describe("credentialsSchema", () => {
   test("normalizes usernames to lowercase", () => {
     const parsed = credentialsSchema.parse({ username: "Admin_1", password: "12345678" });
     expect(parsed.username).toBe("admin_1");
+  });
+});
+
+describe("voteSchema / commentSchema messages", () => {
+  const msg = (r: { success: boolean; error?: { issues: { message: string }[] } }) => r.error?.issues[0].message;
+
+  test("vote errors are in Spanish", () => {
+    expect(msg(voteSchema.safeParse({ value: 2 }))).toBe("Voto no válido.");
+    expect(msg(voteSchema.safeParse({}))).toBe("Voto no válido.");
+    expect(msg(voteSchema.safeParse(null))).toBe("Voto no válido.");
+    expect(voteSchema.safeParse({ value: -1 }).success).toBe(true);
+  });
+
+  test("comment errors are in Spanish", () => {
+    expect(msg(commentSchema.safeParse({ body: "   " }))).toBe("El comentario está vacío.");
+    expect(msg(commentSchema.safeParse({ body: "a".repeat(1001) }))).toBe("Comentario demasiado largo (máx. 1000).");
   });
 });

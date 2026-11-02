@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/server/db";
-import { fail, guardMutation, logServerError, ok } from "@/lib/server/http";
+import { guardMutation, serverError, ok } from "@/lib/server/http";
 import { ensureCurrentPatch } from "@/lib/server/patch";
 import { guideSchema } from "@/lib/server/schemas";
 
@@ -14,7 +14,6 @@ export async function POST(request: Request) {
     });
     return ok(guide, 201);
   } catch (error) {
-    logServerError("create guide", error);
-    return fail("No se pudo publicar la guía.", 500);
+    return serverError("create guide", error, "No se pudo publicar la guía.");
   }
 }

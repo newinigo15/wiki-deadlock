@@ -1,14 +1,19 @@
 import { heroesBySlug } from "@/data/heroes";
 import { prisma } from "@/lib/server/db";
 import { fetchHeroBuilds } from "@/lib/server/community";
-import { fail, guardMutation, logServerError, ok } from "@/lib/server/http";
+import { fail, guardMutation, serverError, ok } from "@/lib/server/http";
 import { ensureCurrentPatch } from "@/lib/server/patch";
 import { buildSchema } from "@/lib/server/schemas";
 
 export async function GET(request: Request) {
   const hero = new URL(request.url).searchParams.get("hero") ?? "";
   if (!heroesBySlug[hero]) return fail("Héroe desconocido.", 400);
-  const result = await fetchHeroBuilds(hero);
+  let result;
+  try {
+    result = await fetchHeroBuilds(hero);
+  } catch (error) {
+    return serverError("list builds", error, "No se pudieron cargar las builds.");
+  }
   if (!result) return fail("La comunidad no está disponible.", 503);
   return ok({
     signedIn: Boolean(result.user),
@@ -37,7 +42,6 @@ export async function POST(request: Request) {
     });
     return ok(build, 201);
   } catch (error) {
-    logServerError("create build", error);
-    return fail("No se pudo guardar la build.", 500);
+    return serverError("create build", error, "No se pudo guardar la build.");
   }
 }

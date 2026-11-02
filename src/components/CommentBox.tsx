@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { readEnvelope } from "@/lib/apiClient";
 
 interface CommentView {
   id: string;
@@ -12,20 +13,23 @@ export function CommentBox({ buildId, initial, signedIn }: { buildId: string; in
   const [comments, setComments] = useState(initial);
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (pending) return;
+    setPending(true);
     setError(null);
     try {
-      const res = await fetch(`/api/builds/${buildId}/comments`, {
+      const comment = await readEnvelope<CommentView>(fetch(`/api/builds/${buildId}/comments`, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ body }),
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error ?? "No se pudo comentar.");
-      setComments((prev) => [...prev, json.data]);
+      }), "No se pudo comentar.");
+      setComments((prev) => [...prev, comment]);
       setBody("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo comentar.");
+    } finally {
+      setPending(false);
     }
   }
 
@@ -41,7 +45,7 @@ export function CommentBox({ buildId, initial, signedIn }: { buildId: string; in
           <label className="sr-only" htmlFor={`c-${buildId}`}>Comentario</label>
           <input id={`c-${buildId}`} value={body} onChange={(e) => setBody(e.target.value)} maxLength={1000} required
             placeholder="¿Funciona en este parche?" className="flex-1 rounded border border-line bg-ink px-2 py-1" />
-          <button className="rounded bg-brass px-3 py-1 text-ink">Enviar</button>
+          <button disabled={pending} className="rounded bg-brass px-3 py-1 text-ink disabled:opacity-50">{pending ? "…" : "Enviar"}</button>
         </form>
       ) : (
         <p className="mt-2 text-muted"><a href="/entrar" className="underline">Inicia sesión</a> para comentar.</p>

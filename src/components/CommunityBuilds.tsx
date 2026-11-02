@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { itemsBySlug } from "@/data/items";
+import { readEnvelope } from "@/lib/apiClient";
 import { CommentBox } from "./CommentBox";
 import { ItemChip } from "./ItemChip";
 import { VoteButtons } from "./VoteButtons";
@@ -30,12 +31,11 @@ export function CommunityBuilds({ heroSlug }: { heroSlug: string }) {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`/api/builds?hero=${encodeURIComponent(heroSlug)}`, { signal: controller.signal })
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.success) setState({ status: "ready", ...json.data });
-        else setState({ status: "unavailable", message: json.error ?? "No disponible." });
-      })
+    readEnvelope<{ signedIn: boolean; builds: BuildView[] }>(
+      fetch(`/api/builds?hero=${encodeURIComponent(heroSlug)}`, { signal: controller.signal }),
+      "La comunidad no está disponible.",
+    )
+      .then((data) => setState({ status: "ready", ...data }))
       .catch((error: unknown) => {
         if (!controller.signal.aborted) setState({ status: "unavailable", message: error instanceof Error ? error.message : "No disponible." });
       });

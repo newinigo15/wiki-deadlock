@@ -39,6 +39,11 @@ export const guideSchema = z.object({
   body: z.string().trim().min(50, "La guía necesita al menos 50 caracteres.").max(20_000),
 });
 
-export const voteSchema = z.object({ value: z.union([z.literal(1), z.literal(-1), z.literal(0)]) });
+export const voteSchema = z.object(
+  { value: z.union([z.literal(1), z.literal(-1), z.literal(0)], { error: "Voto no válido." }) },
+  { error: "Voto no válido." },
+);
 
-export const commentSchema = z.object({ body: z.string().trim().min(1).max(1000) });
+export const commentSchema = z.object({
+  body: z.string().trim().min(1, "El comentario está vacío.").max(1000, "Comentario demasiado largo (máx. 1000)."),
+});

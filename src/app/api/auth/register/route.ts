@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/server/db";
 import { createSession, hashPassword } from "@/lib/server/auth";
-import { fail, guardMutation, logServerError, ok } from "@/lib/server/http";
+import { fail, guardMutation, serverError, ok } from "@/lib/server/http";
 import { credentialsSchema } from "@/lib/server/schemas";
 
 export async function POST(request: Request) {
@@ -18,7 +18,6 @@ export async function POST(request: Request) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return fail("Ese nombre de usuario ya existe.", 409);
     }
-    logServerError("register", error);
-    return fail("No se pudo crear la cuenta.", 500);
+    return serverError("register", error, "No se pudo crear la cuenta.");
   }
 }

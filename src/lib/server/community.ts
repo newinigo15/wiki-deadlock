@@ -1,5 +1,6 @@
 import { isDbConfigured, prisma } from "./db";
 import { getCurrentUser } from "./auth";
+import { isDbUnavailable } from "./http";
 
 /** Lecturas de comunidad para páginas de servidor; devuelven null si la BD no está disponible. */
 export async function fetchHeroBuilds(heroSlug: string) {
@@ -14,13 +15,16 @@ export async function fetchHeroBuilds(heroSlug: string) {
         author: { select: { username: true } },
         patch: { select: { name: true } },
         votes: user ? { where: { userId: user.id }, select: { value: true } } : false,
-        comments: { orderBy: { createdAt: "asc" }, take: 20, include: { user: { select: { username: true } } } },
+        // Los 20 más recientes (desc + take) y luego se devuelven en orden cronológico.
+        comments: { orderBy: { createdAt: "desc" }, take: 20, include: { user: { select: { username: true } } } },
       },
     });
+    for (const build of builds) build.comments.reverse();
     return { user, builds };
   } catch (error) {
     console.error("[community] fetchHeroBuilds", error);
-    return null;
+    if (isDbUnavailable(error)) return null;
+    throw error;
   }
 }
 
@@ -40,7 +44,8 @@ export async function fetchGuides() {
     return { user, guides };
   } catch (error) {
     console.error("[community] fetchGuides", error);
-    return null;
+    if (isDbUnavailable(error)) return null;
+    throw error;
   }
 }
 
@@ -59,6 +64,7 @@ export async function fetchGuide(id: string) {
     return { user, guide };
   } catch (error) {
     console.error("[community] fetchGuide", error);
-    return null;
+    if (isDbUnavailable(error)) return null;
+    throw error;
   }
 }

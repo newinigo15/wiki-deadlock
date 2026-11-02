@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { readEnvelope } from "@/lib/apiClient";
 
 interface Props {
   heroSlug: string;
@@ -14,22 +15,25 @@ export function SaveBuild({ heroSlug, heroName, items, flexSlots }: Props) {
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [pending, setPending] = useState(false);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    if (pending) return;
+    setPending(true);
     setStatus(null);
     try {
-      const res = await fetch("/api/builds", {
+      await readEnvelope(fetch("/api/builds", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ heroSlug, title, items, flexSlots }),
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error ?? "No se pudo guardar.");
+      }), "No se pudo guardar.");
       setStatus({ kind: "ok", text: "Build publicada." });
       setTitle("");
     } catch (err) {
       setStatus({ kind: "error", text: err instanceof Error ? err.message : "No se pudo guardar." });
+    } finally {
+      setPending(false);
     }
   }
 
@@ -50,8 +54,8 @@ export function SaveBuild({ heroSlug, heroName, items, flexSlots }: Props) {
         <label htmlFor="build-title" className="sr-only">Título</label>
         <input id="build-title" value={title} onChange={(e) => setTitle(e.target.value)} required minLength={3} maxLength={80}
           placeholder={`Mi build de ${heroName}`} className="flex-1 rounded-md border border-line bg-ink px-3 py-2 text-sm" />
-        <button disabled={items.length === 0} className="rounded-md bg-brass px-4 py-2 text-sm font-medium text-ink disabled:opacity-40">
-          Publicar
+        <button disabled={pending || items.length === 0} className="rounded-md bg-brass px-4 py-2 text-sm font-medium text-ink disabled:opacity-40">
+          {pending ? "Publicando…" : "Publicar"}
         </button>
         <button type="button" onClick={copyLink} className="rounded-md border border-line px-4 py-2 text-sm">
           {copied ? "¡Copiado!" : "Copiar enlace"}

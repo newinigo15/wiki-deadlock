@@ -1,5 +1,6 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/server/db";
-import { fail, guardMutation, logServerError, ok } from "@/lib/server/http";
+import { fail, guardMutation, serverError, ok } from "@/lib/server/http";
 import { commentSchema } from "@/lib/server/schemas";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -15,7 +16,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
     return ok(comment, 201);
   } catch (error) {
-    logServerError("comment", error);
-    return fail("No se pudo publicar el comentario.", 500);
+    // La build pudo borrarse entre el count y el insert: la FK falla (P2003) y es un 404, no un 500.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+      return fail("Build no encontrada.", 404);
+    }
+    return serverError("comment", error, "No se pudo publicar el comentario.");
   }
 }

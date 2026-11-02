@@ -19,6 +19,8 @@ export async function verifyPassword(password: string, stored: string): Promise<
   const [saltHex, keyHex] = stored.split(":");
   if (!saltHex || !keyHex) return false;
   const expected = Buffer.from(keyHex, "hex");
+  // Un hash corrupto (clave no hexadecimal) daría un buffer vacío y timingSafeEqual(vacío, vacío) === true.
+  if (expected.length !== KEY_LENGTH) return false;
   const actual = await scryptAsync(password, Buffer.from(saltHex, "hex"), expected.length);
   return timingSafeEqual(expected, actual);
 }
@@ -44,8 +46,12 @@ export async function createSession(userId: string): Promise<void> {
 export async function destroySession(): Promise<void> {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
-  if (token) await prisma.session.deleteMany({ where: { id: hashToken(token) } });
-  jar.delete(SESSION_COOKIE);
+  try {
+    if (token) await prisma.session.deleteMany({ where: { id: hashToken(token) } });
+  } finally {
+    // Aunque la BD falle, el navegador deja de enviar el token.
+    jar.delete(SESSION_COOKIE);
+  }
 }
 
 export interface SessionUser {

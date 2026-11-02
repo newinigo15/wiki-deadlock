@@ -20,6 +20,11 @@ const eslintConfig = [
       "next-env.d.ts",
     ],
   },
+  {
+    // Scripts de Node en CommonJS (p. ej. scripts/visual/capture.cjs): require() es legítimo.
+    files: ["scripts/**/*.cjs"],
+    rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
 ];
 
 export default eslintConfig;

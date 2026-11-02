@@ -52,6 +52,8 @@ npm run build
 
 ## Seguridad
 
-Contraseñas con scrypt, sesiones en base de datos (solo se guarda el hash del token), cookie `httpOnly` + `SameSite=Lax`, comprobación de origen en escrituras, limitación de peticiones por IP y validación con Zod. El contenido de usuarios se renderiza como texto.
+Contraseñas con scrypt, sesiones en base de datos (solo se guarda el hash del token), cookie `httpOnly` + `SameSite=Lax`, comprobación de origen en escrituras, limitación de peticiones por IP y validación con Zod. El contenido de usuarios se renderiza como texto. Los cuerpos de escritura se leen en streaming y se cortan a 64 KB (413), aunque no venga `content-length`.
+
+**Rate limit e IP del cliente.** Cualquier cliente puede falsear las cabeceras `X-Real-IP` y `X-Forwarded-For`, así que por defecto se ignoran y todas las peticiones comparten un tope anti-flood alto (600 escrituras/min en total); además, cada usuario con sesión tiene su propio límite de 30 escrituras/min. El login solo cuenta intentos **fallidos** (5 por usuario cada 15 min; con `TRUST_PROXY=1`, 5 por usuario + IP y 50 por usuario en total). Si despliegas detrás de un proxy inverso que **añade** la IP real al final de `X-Forwarded-For` (nginx con `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for`, Vercel, Caddy, Traefik, etc.), define `TRUST_PROXY=1` para limitar por IP: se usa solo el último salto de esa cabecera. `X-Real-IP` se ignora siempre, porque muchos proxies la reenvían tal cual la manda el cliente. No lo actives si la app queda expuesta directamente (`next start` sin proxy).
 
 Wiki de fans no oficial. Deadlock es una marca de Valve Corporation.

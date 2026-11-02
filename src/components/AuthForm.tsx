@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { readEnvelope } from "@/lib/apiClient";
 
 export function AuthForm() {
   const router = useRouter();
@@ -16,11 +17,9 @@ export function AuthForm() {
     setPending(true);
     setError(null);
     try {
-      const res = await fetch(`/api/auth/${mode}`, {
+      await readEnvelope(fetch(`/api/auth/${mode}`, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password }),
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error ?? "Error de autenticación.");
+      }), "Error de autenticación.");
       router.push("/comunidad");
       router.refresh();
     } catch (err) {
@@ -58,10 +57,28 @@ export function AuthForm() {
 
 export function LogoutButton() {
   const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
+  async function logout() {
+    setPending(true);
+    setError(null);
+    try {
+      await readEnvelope(fetch("/api/auth/logout", { method: "POST" }), "No se pudo cerrar la sesión.");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo cerrar la sesión.");
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
-    <button type="button" className="text-sm text-muted underline"
-      onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }).catch(() => null); router.refresh(); }}>
-      Cerrar sesión
-    </button>
+    <span className="inline-flex flex-col items-start">
+      <button type="button" disabled={pending} onClick={logout} className="text-sm text-muted underline disabled:opacity-50">
+        Cerrar sesión
+      </button>
+      {error && <span role="alert" className="text-sm text-danger">{error}</span>}
+    </span>
   );
 }
